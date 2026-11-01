@@ -1,0 +1,12 @@
+- diagnostic label rendering
+- parsing
+- analysis
+- tacky
+- asm
+- asm transformations
+- output
+
+- implement --no-bounds-checks
+- implement --wrap-overflow
+- implement --no-float-checks
+- implement --use-avx
