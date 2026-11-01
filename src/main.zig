@@ -38,7 +38,6 @@ pub fn main(init: std.process.Init) !u8 {
 
     const src = try preprocess_source(args.input_path, init.arena.allocator(), io, stderr);
     const file_id = try state.createFile(src, args.input_path);
-    std.debug.print("{d}", .{state.diagnostics.diagnostics.items.len});
     var tokens = state.lex(file_id) catch |e| switch (e) {
         error.Invalid => {
             for (state.diagnostics.diagnostics.items) |diagnostic| {
