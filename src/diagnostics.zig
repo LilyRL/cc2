@@ -100,19 +100,19 @@ fn printSpanSource(out: *std.Io.Writer, span: Span, file: ?lib.File) !void {
         const end_line_first_char = firstCharOfLine(&f, end_line);
         const end_line_last_char = lastCharOfLine(&f, end_line);
 
-        try out.print("  --> {s}:{d}:{d}\n", .{ f.name, start_line + 1, start - start_line_first_char });
-        try out.print("{d:0>4} |  {s}{s}{s}", .{ start_line + 1, f.source[start_line_first_char..start], ansi.fg.underline.red, f.source[start..@max(start, @min(start_line_last_char, end))] });
+        try out.print("    --> {s}:{d}:{d}\n", .{ f.name, start_line + 1, start - start_line_first_char });
+        try out.print("{d: >4} |  {s}{s}{s}", .{ start_line + 1, f.source[start_line_first_char..start], ansi.fg.underline.red, f.source[start..@max(start, @min(start_line_last_char, end))] });
 
         if (end_line > start_line + 1) {
             for (start_line + 1..end_line) |i| {
                 const line_first_char = f.linemap.items[i];
                 const line_last_char = lastCharOfLine(&f, i);
-                try out.print("{d}  {s}\n", .{ i + 1, f.source[line_first_char..line_last_char] });
+                try out.print("{d:0>4} |  {s}\n", .{ i + 1, f.source[line_first_char..line_last_char] });
             }
         }
 
         if (end_line != start_line) {
-            try out.print("{d}  {s}{s}{s}", .{ end_line, f.source[end_line_first_char..end], ansi.reset, f.source[end..end_line_last_char] });
+            try out.print("{d:0>4} |  {s}{s}{s}", .{ end_line, f.source[end_line_first_char..end], ansi.reset, f.source[end..end_line_last_char] });
         } else {
             try out.print("{s}{s}", .{ ansi.reset, f.source[end..end_line_last_char] });
         }
@@ -123,7 +123,16 @@ fn printSpanSource(out: *std.Io.Writer, span: Span, file: ?lib.File) !void {
 
 pub fn print(self: *const Diagnostic, state: *const lib.State, out: *std.Io.Writer) !void {
     try out.writeAll(ansi.fg.bold.red);
-    try out.writeAll("Error: ");
+
+    try out.writeAll(switch (self.stage) {
+        .lex => "error(lexing): ",
+        .parse => "error(parsing): ",
+        .resolve => "error(resolving): ",
+        .typecheck => "error(typechecking): ",
+        .const_eval => "error(const evaluation): ",
+        .codegen => "error(code generation): ",
+    });
+
     try out.writeAll(ansi.fg.high_intensity.bold.white);
     try out.writeAll(self.message);
     try out.writeAll("\n");

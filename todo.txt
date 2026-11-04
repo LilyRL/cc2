@@ -1,3 +1,5 @@
+- update to zig 0.17
+- dont use !T without E!T
 - diagnostic label rendering
 - parsing
 - analysis

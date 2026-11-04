@@ -3,7 +3,6 @@ const Io = std.Io;
 
 pub const Constant = @import("constant.zig").Constant;
 pub const Identifier = @import("identifier.zig");
-pub const lex = @import("lexer.zig").lex;
 pub const Diagnostic = @import("diagnostics.zig");
 pub const CompilerArgs = @import("args.zig");
 pub const Diagnostics = Diagnostic.Store;
@@ -12,18 +11,24 @@ pub const FileId = File.FileId;
 pub const Files = File.Store;
 pub const Token = @import("lexer.zig").Token;
 
+pub const lex = @import("lexer.zig").lex;
+pub const parse = @import("parser.zig").parse;
+
+pub const ast = @import("ast.zig");
+pub const types = @import("types.zig");
 pub const ansi = @import("ansi.zig");
+pub const utils = @import("utils.zig");
 
 pub const State = struct {
     identifiers: Identifier.Interner,
-    arena: std.heap.ArenaAllocator,
+    arena: std.mem.Allocator,
     gpa: std.mem.Allocator,
     files: Files,
     diagnostics: Diagnostics,
 
-    pub fn init(gpa: std.mem.Allocator, arena: std.heap.ArenaAllocator) State {
+    pub fn init(gpa: std.mem.Allocator, arena: std.mem.Allocator) State {
         return .{
-            .identifiers = Identifier.Interner.init(arena.child_allocator, gpa),
+            .identifiers = Identifier.Interner.init(arena, gpa),
             .arena = arena,
             .gpa = gpa,
             .files = Files.init(gpa),
@@ -39,7 +44,7 @@ pub const State = struct {
     }
 
     pub fn createFile(self: *State, text: []const u8, path: []const u8) !FileId {
-        const name = try self.arena.child_allocator.dupe(u8, path);
+        const name = try self.arena.dupe(u8, path);
         const file_object = try self.files.newFile(name, text);
         try self.files.add(file_object);
         return file_object.id;
@@ -49,7 +54,7 @@ pub const State = struct {
         const cwd = std.Io.Dir.cwd();
         var file = try cwd.openFile(io, path, .{ .mode = .read_only });
         const length = try file.length(io);
-        var buf = try self.arena.child_allocator.alloc(u8, length);
+        var buf = try self.arena.alloc(u8, length);
         var file_reader = file.reader(io, buf);
         try file_reader.interface.readSliceAll(buf[0..]);
 
@@ -60,7 +65,6 @@ pub const State = struct {
         self.diagnostics.deinit();
         self.identifiers.deinit();
         self.files.deinit();
-        self.arena.deinit();
     }
 };
 

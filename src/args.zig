@@ -91,7 +91,7 @@ const table = [_]struct { []const u8, NamedArg }{
 };
 
 fn printHelp(writer: anytype) !void {
-    try writer.writeAll("Usage: evilc [options] <input file>\n");
+    try writer.writeAll("Usage: cc2 [options] <input file>\n");
     try writer.writeAll("Options:\n");
     try writer.writeAll("  --help, -h                     Show this help message\n");
     try writer.writeAll("  --output <file>                Specify output file path\n");

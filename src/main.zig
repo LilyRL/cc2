@@ -5,6 +5,7 @@ const lib = @import("cc2");
 
 pub fn main(init: std.process.Init) !u8 {
     const gpa = init.gpa;
+    const arena = init.arena;
     const io = init.io;
 
     var out_buffer: [4096]u8 = undefined;
@@ -33,10 +34,10 @@ pub fn main(init: std.process.Init) !u8 {
         };
     }
 
-    var state = lib.State.init(gpa, init.arena.*);
+    var state = lib.State.init(gpa, arena.allocator());
     defer state.deinit();
 
-    const src = try preprocess_source(args.input_path, init.arena.allocator(), io, stderr);
+    const src = try preprocess_source(args.input_path, arena.allocator(), io, stderr);
     const file_id = try state.createFile(src, args.input_path);
     var tokens = state.lex(file_id) catch |e| switch (e) {
         error.Invalid => {
@@ -71,6 +72,25 @@ pub fn main(init: std.process.Init) !u8 {
         }
         return 0;
     }
+
+    const program = lib.parse(tokens.items, file_id, &state) catch |e| switch (e) {
+        error.Invalid => {
+            for (state.diagnostics.diagnostics.items) |diagnostic| {
+                try diagnostic.print(&state, stdout);
+            }
+            return 1;
+        },
+        else => {
+            stderr.print("failed to parse file: {}\n", .{e}) catch {};
+            return 1;
+        },
+    };
+
+    const formatter = lib.ast.Formatter{ .state = state };
+    try formatter.formatProgram(
+        program,
+        stdout,
+    );
 
     return 0;
 }

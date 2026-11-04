@@ -51,7 +51,7 @@ pub const Token = struct {
         semicolon,
         tilde,
         hyphen,
-        plus,
+        add,
         asterisk,
         slash,
         percent,
@@ -89,6 +89,7 @@ pub const Token = struct {
 
         @"return",
         @"if",
+        @"else",
         goto,
         do,
         @"while",
@@ -100,8 +101,6 @@ pub const Token = struct {
         @"continue",
         static,
         @"extern",
-
-        eof,
     };
 };
 
@@ -117,7 +116,7 @@ const keywords = std.StaticStringMap(Token.Tag).initComptime(.{
     .{ "if", .@"if" },
     .{ "goto", .goto },
     .{ "do", .do },
-    .{ "if", .@"if" },
+    .{ "else", .@"else" },
     .{ "while", .@"while" },
     .{ "for", .@"for" },
     .{ "switch", .@"switch" },
@@ -141,7 +140,7 @@ const operators = std.StaticStringMap(Token.Tag).initComptime(.{
     .{ ";", .semicolon },
     .{ "~", .tilde },
     .{ "-", .hyphen },
-    .{ "+", .plus },
+    .{ "+", .add },
     .{ "*", .asterisk },
     .{ "/", .slash },
     .{ "%", .percent },
@@ -199,7 +198,7 @@ pub const Lexer = struct {
             .start = 0,
             .tokens = TokenList.empty,
             .gpa = state.gpa,
-            .arena = state.arena.allocator(),
+            .arena = state.arena,
             .identifiers = &state.identifiers,
             .diagnostics = &state.diagnostics,
             .file_id = file_id,
@@ -217,8 +216,6 @@ pub const Lexer = struct {
             self.start = self.current - 1;
             try self.nextChar(char);
         }
-
-        try self.pushToken(.{ .span = self.newSpan(self.current, self.current), .tag = .eof });
 
         return self.tokens;
     }
